@@ -1,26 +1,84 @@
 const express = require("express");
-const {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-} = require("../../models/contacts");
-const {
-  validatePostCont,
-  validateUpdCont,
-} = require("../../middleware/validation");
-
 const router = express.Router();
 
-router.get("/", listContacts);
+const { Contact, joiSchema } = require("../../models/contacts");
+const { NotFound, BadRequest } = require("http-errors");
 
-router.get("/:contactId", getContactById);
+router.get("/", async (req, res, next) => {
+  try {
+    const contacts = await Contact.find();
+    res.json(contacts);
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.post("/", validatePostCont, addContact);
+router.get("/:contactId", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const contact = await Contact.find(contactId);
+    if (!contact) {
+      throw new NotFound();
+    }
+    res.json(contact);
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.delete("/:contactId", removeContact);
+router.post("/", async (req, res, next) => {
+  try {
+    const { error } = joiSchema.validate(req.body);
+    if (error) {
+      throw new BadRequest("missing reguired name field");
+    }
+    const newContact = await Contact.create(req.body);
+    res.status(201).json(newContact);
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.put("/:contactId", validateUpdCont, updateContact);
+router.delete("/:contactId", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const deleteContact = await Contact.findByIdAndRemove(contactId);
+    if (!deleteContact) {
+      throw new NotFound();
+    }
+    res.json("message: contact deleted");
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put("/:contactId", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const updateContact = await Contact.findByIdAndUpdate(contactId, req.body, {
+      new: true,
+    });
+    res.json(updateContact);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/:contactId/favorite", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { favorite = false } = req.params;
+    const updateContact = await Contact.findByIdAndUpdate(
+      contactId,
+      req.body,
+      { favorite },
+
+      { new: true }
+    );
+    res.json(updateContact);
+  } catch (error) {
+    next(error);
+  }
+});
 
 module.exports = router;
