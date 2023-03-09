@@ -1,127 +1,49 @@
 const { Schema, model } = require("mongoose");
 const Joi = require("joi");
+const { mongooseHandleError } = require("../helpers");
 
-const contactsSchema = Schema({
-  name: {
-    type: String,
-    required: [true, "Set name for contact"],
+const contactSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Set name for contact"],
+    },
+    email: {
+      type: String,
+    },
+    phone: {
+      type: String,
+    },
+    favorite: {
+      type: Boolean,
+      default: false,
+    },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+    },
   },
-  email: {
-    type: String,
-  },
-  phone: {
-    type: String,
-  },
-  favorite: {
-    type: Boolean,
-    default: false,
-  },
-});
+  { versionKey: false, timestamps: true }
+);
 
-const joiSchema = Joi.object({
-  name: Joi.string().min(3).required(),
+contactSchema.post("save", mongooseHandleError);
+
+const addSchema = Joi.object({
+  name: Joi.string().required(),
   email: Joi.string().required(),
   phone: Joi.string().required(),
-  favorite: Joi.bool,
+  favorite: Joi.boolean(),
 });
 
-const Contact = model("contacts", contactsSchema);
+const updateFavoriteSchema = Joi.object({
+  favorite: Joi.boolean().required(),
+});
 
-module.exports = { Contact, joiSchema };
+const schemas = {
+  addSchema,
+  updateFavoriteSchema,
+};
 
-// const fs = require("fs/promises");
-// const path = require("path");
-// const { v4: uuidv4 } = require("uuid");
+const Contact = model("contacts", contactSchema);
 
-// const normalizedPath = path.resolve(__dirname, "./contacts.json");
-
-// const getContactsFromFile = async () => {
-//   const contacts = await fs.readFile(normalizedPath);
-//   const normalizedContacts = JSON.parse(contacts);
-//   return normalizedContacts;
-// };
-
-// const listContacts = async (req, res) => {
-//   try {
-//     const contacts = await getContactsFromFile();
-//     res.json(contacts);
-//   } catch (error) {
-//     console.log(error.message);
-//   }
-// };
-
-// const getContactById = async (req, res) => {
-//   try {
-//     const id = req.params.contactId;
-//     const cont = await getContactsFromFile();
-//     const filtCont = cont.filter((el) => el.id === id);
-//     if (!filtCont.length) res.status(404).json({ message: "Not found" });
-//     else res.json(...filtCont);
-//   } catch (error) {
-//     console.log(error.message);
-//   }
-// };
-
-// const removeContact = async (req, res, next) => {
-//   try {
-//     const id = req.params.contactId;
-//     const contacts = await getContactsFromFile();
-//     const isContactExist = contacts.some((el) => el.id !== id);
-//     if (isContactExist) {
-//       const newContacts = contacts.filter((el) => el.id !== id);
-//       fs.writeFile(normalizedPath, JSON.stringify(newContacts));
-//       res.json({ message: "contsct deleted" });
-//     } else res.status(404).json({ message: "Not found" });
-//   } catch (error) {
-//     console.log(error.message);
-//   }
-// };
-
-// const addContact = async (req, res, next) => {
-//   try {
-//     const contacts = await getContactsFromFile();
-//     const { name, email, phone } = req.body;
-//     if (name && email && phone) {
-//       const newContact = { id: uuidv4(), name, email, phone };
-//       fs.writeFile(normalizedPath, JSON.stringify([newContact, ...contacts]));
-//       res.status(201).json(newContact);
-//     } else res.status(404).json({ message: "missing required name field" });
-//   } catch (error) {
-//     console.log(error.message);
-//   }
-// };
-
-// const updateContact = async (req, res, next) => {
-//   try {
-//     const contacts = await getContactsFromFile();
-//     const id = req.params.contactId;
-//     const isContactExist = contacts.some((el) => el.id === id);
-//     const { name, email, phone } = req.body;
-
-//     if (Object.keys(req.body).length === 0) {
-//       res.status(400).json({ message: "missing fields" });
-//     } else if (!isContactExist) res.status(404).json({ message: "Not found" });
-//     else {
-//       contacts.forEach((el) => {
-//         if (el.id === id) {
-//           el.name = name || el.name;
-//           el.email = email || el.email;
-//           el.phone = phone || el.phone;
-//         }
-//       });
-//       fs.writeFile(normalizedPath, JSON.stringify(contacts));
-//       const updCont = contacts.filter((el) => el.id === id);
-//       res.json(updCont);
-//     }
-//   } catch (error) {
-//     console.log(error.message);
-//   }
-// };
-
-// module.exports = {
-//   listContacts,
-//   getContactById,
-//   removeContact,
-//   addContact,
-//   updateContact,
-// };
+module.exports = { Contact, schemas };
