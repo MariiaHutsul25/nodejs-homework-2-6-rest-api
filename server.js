@@ -3,14 +3,14 @@ const app = require("./app");
 
 const { MONGO_URL, PORT } = process.env;
 
+mongoose.set("strictQuery", true);
+
 mongoose
   .connect(MONGO_URL)
   .then(() => {
-    app.listen(PORT, () => {
-      console.log(
-        `Database connection succcessful. Server running. Use our API on port: ${PORT}`
-      );
-    });
+    console.log("Database connection successful");
+    app.listen(PORT);
+    console.log(`Server running. Use our API on port: ${PORT}`);
   })
   .catch((error) => {
     console.log(error.message);
